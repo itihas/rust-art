@@ -31,11 +31,15 @@
           strictDeps = true;
 
           buildInputs = [
-            # Add additional build inputs here
+            pkgs.vulkan-loader
           ]
           ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-            # Additional darwin specific inputs can be set here
             pkgs.libiconv
+          ]
+          ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+            pkgs.alsa-lib
+            pkgs.libxkbcommon
+            pkgs.wayland
           ];
         };
 
@@ -61,16 +65,28 @@
           drv = artCrate;
         };
 
-        devShells.default = craneLib.devShell {
+        devShells.default = craneLib.devShell rec {
           # Inherit inputs from checks.
           checks = self.checks.${system};
 
           # Additional dev-shell environment variables can be set directly
           # MY_CUSTOM_DEVELOPMENT_VAR = "something else";
 
+          LD_LIBRARY_PATH =
+            builtins.foldl' (a: b: "${a}:${b}/lib") "${pkgs.vulkan-loader}/lib" packages;
           # Extra inputs can be added here; cargo and rustc are provided by default.
-          packages = [
-            # pkgs.ripgrep
+          packages = with pkgs; [
+            alsa-lib
+            cmake
+            fontconfig
+            freetype
+            libGL
+            libxkbcommon
+            pkg-config
+            vulkan-loader
+            vulkan-validation-layers
+            wayland
+            wayland-protocols
           ];
         };
       }
